@@ -4,6 +4,7 @@ import ErrorWrapper from "../utils/ErrorWrapper.js";
 import { GoogleGenAI } from "@google/genai";
 import axios from "axios"
 
+
 const weatherData=async(lat,lon)=>{
     
   const{data}=await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.OPEN_WEATHER_API}`)
@@ -40,59 +41,14 @@ export const advice= ErrorWrapper(async (req,res,next) => {
     
     
     try {
-    const {temperature,water,healthRating,moodRating,query,email} = req.body;
+    const {stress,water,bodyPain,headache,screenTime,sleepHours,food,exercise,alcohol,mood,email} = req.body;
     
-    if ( !temperature || !water || !healthRating || !moodRating || !email) {
+    if ( !stress || !water || !bodyPain || !headache || !screenTime || !sleepHours || !food || !exercise || !alcohol || !mood || !email) {
       return res.status(400).json({ message: "Enter all the details" });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({});
     
-    let healthRatingValue="";
-    
-    switch (parseInt(healthRating)) {
-      case 1:
-        healthRatingValue="Worst"
-        break;
-      case 2:
-        healthRatingValue="Not better"
-        break;
-      case 3:
-        healthRatingValue="Average"
-        break;
-      case 4:
-        healthRatingValue="Feeling healthy"
-        break;
-      case 5:
-        healthRatingValue="healthy and energetic"
-        break;   
-      default:
-        healthRatingValue="confused"
-        break;
-    }
-    
-    let moodRatingValue="";
-    switch (parseInt(moodRating)) {
-      case 1:
-        moodRatingValue="Worst"
-        break;
-      case 2:
-        moodRatingValue="unhappy"
-        break;
-      case 3:
-        moodRatingValue="Average"
-        break;
-      case 4:
-        moodRatingValue="happy"
-        break;
-      case 5:
-        moodRatingValue="happy and exited"
-        break;   
-      default:
-        moodRatingValue="confused"
-        break;
-    }
-
     const lat=req.user.location.lat;
     const lon=req.user.location.lon;
     const data=await weatherData(lat,lon);
@@ -104,40 +60,43 @@ export const advice= ErrorWrapper(async (req,res,next) => {
     }
     weatherStr+=" ]"
     
-    let healthMsg=""
-    if(query!=undefined){
       
-      healthMsg=`My body Temperature is ${temperature} Fahrenheit and i've drink ${water} water glasses, my health is ${healthRatingValue} and mood is ${moodRatingValue} and i'm feeling like ${query} and my Surounding weather is ${weatherStr}. Suggest me a routine for rest of the day`;
-    }
-    else{
-      healthMsg=`My body Temperature is ${temperature}+" Fahrenheit and i've drink ${water} water glasses, my health is ${healthRatingValue} and mood is ${moodRatingValue} and my Surounding weather is ${weatherStr}. Suggest me a routine for rest of the day`;
-    }
+    const user=await User.findOne({email:email});
     
-    
+    const healthMsg=`Suggest me a healthy routine for rest of the day based on my curent condition in 12hr clock:- 
+      Stress: ${stress}, water glasses drink: ${water},
+      bodypain: ${bodyPain}, headach: ${headache},
+      screenTime:${screenTime} hours, sleepHours:${sleepHours},
+      food preference: ${food}, exercise: ${exercise}, 
+      alcohol consumed: ${alcohol}, mood:${mood},
+      age: ${user.generalHealth.age}, disease:${user.generalHealth.disease},
+      workType: ${user.generalHealth.workType}, meals per day: ${user.generalHealth.mealsNumber}
+      current weather: ${weatherStr}
+    `;
+
     const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: healthMsg,
+          model: "gemini-2.5-flash",
+          contents: healthMsg,
     });
 
-
-    const healthStatus={
+    const currentHealth={
       date:Date.now(),
       water:parseInt(water),
-      healthRating:parseInt(healthRating),
-      moodRating:parseInt(moodRating),
-      temperature:parseFloat(temperature),
-      query,
+      stress,
+      bodyPain,
+      headache,
+      screenTime:parseInt(screenTime),
+      sleepHours:parseInt(sleepHours),
+      food,
+      exercise,
+      alcohol,
+      mood,
       response:response.text
     }
-
-    try {
+    
+    user.healthStatus.unshift(currentHealth);
+    await user.save();
       
-      const user=await User.findOne({email:email});
-      user.healthStatus.unshift(healthStatus);
-      await user.save();
-    } catch (error) {
-      throw new ErrorHandler(403,`Error in fetching User Details`);
-    }
 
     res.status(200).json({
       message:"Suggestion Received",
@@ -194,9 +153,6 @@ export const generateAlert= ErrorWrapper(async (req,res,next) => {
   } catch (error) {
     throw new ErrorHandler(401,`Error in Fetching User details`);
   }
-
-
-  
   
 })
 

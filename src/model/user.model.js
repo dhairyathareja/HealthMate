@@ -15,13 +15,24 @@ const userSchema = new Schema({
         lat:String,
         lon:String
     },
+    generalHealth:{
+        age:Number,
+        disease:String,
+        workType:String,
+        mealsNumber:Number
+    },
     healthStatus:[{
           date: { type: Date, default: Date.now },
           water:Number,
-          healthRating:Number,
-          moodRating:Number,
-          temperature:Number,
-          query:String,
+          stress: String,
+          bodyPain:String,
+          headache:String,
+          screenTime:Number,
+          sleepHours:Number,
+          food: String,
+          exercise:String,
+          alcohol:String,
+          mood:String,
           response:String,
           checklist:[
             {

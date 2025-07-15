@@ -21,10 +21,10 @@ const generateAccessAndRefreshToken=async(userId)=>{
 
 export const signUpController = ErrorWrapper(async (req,res,next) => {
 
-    const {name,email,phone,password,city} = req.body;  
+    const {name,email,phone,password,city,age,disease,workType,mealsNumber} = req.body;  
     
 
-    if(!name || !email || !phone || !password || !city){
+    if(!name || !email || !phone || !password || !city || !age || !disease || !workType || !mealsNumber){
         throw new ErrorHandler(401,`Please Enter the details....`);
     }
     
@@ -50,6 +50,13 @@ export const signUpController = ErrorWrapper(async (req,res,next) => {
         lon:data[0].lon
     }
 
+    const generalHealth={
+        age:parseInt(age),
+        disease,
+        workType,
+        mealsNumber:parseInt(mealsNumber)
+    }
+
     try {
             
 
@@ -58,6 +65,7 @@ export const signUpController = ErrorWrapper(async (req,res,next) => {
                 email,
                 phone,
                 password,
+                generalHealth,
                 location
             });
             
