@@ -36,6 +36,10 @@ app.use(express.static(buildPath));
 app.use('/auth', authRouter); 
 app.use('/user',verifyJWT,userRouter);
 
+// Fallback: React client-side routes
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
 
 mongoose.connect(process.env.DB_URI).then(() => {
   app.listen(PORT);
