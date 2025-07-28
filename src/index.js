@@ -37,7 +37,7 @@ app.use('/auth', authRouter);
 app.use('/user',verifyJWT,userRouter);
 
 // Fallback: React client-side routes
-app.get('/*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
